@@ -4,14 +4,11 @@ import java.util.ArrayList;
 class Task{
     private String id;
     private Runnable work;
-    // private int parentCount;
 
     private List<Task> children;
     private int dependencyCount;
 
     private TaskState state;
-
-    // private List<Task> dependencyList; 
 
     public Task(String id, Runnable work){
         this.id = id;
@@ -19,42 +16,29 @@ class Task{
 
         this.children = new ArrayList<>();
         this.dependencyCount = 0;
-        
-        // this.dependencyList = new ArrayList<>();
-        // this.parentCount = 0;
 
         this.state = TaskState.PENDING;
     }
 
     public void addDependency(Task task){
-        // children.add(task);
         task.children.add(this);
         this.dependencyCount++;
     }
     public List<Task> getChildren(){
         return children;
     }
-    public int getDependencyCount(){
+    public synchronized int getDependencyCount(){
         return dependencyCount;
     }
 
-    public void dependencyCompleted(){
+    // public synchronized void dependencyCompleted(){
+    //     dependencyCount--;
+    // }
+    public synchronized boolean dependencyCompleted(){
         dependencyCount--;
+
+        return dependencyCount == 0 && state == TaskState.PENDING;
     }
-
-    // public void addParent(){
-    //     parentCount++;
-    // }
-    // public int getParentCount(){
-    //     return parentCount;
-    // }
-
-    // public void addChild(Task task){
-    //     children.add(task);
-    // }
-    // public List<Task> getChildren(){
-    //     return children;
-    // }
 
     public void doWork(){
         work.run();
@@ -64,10 +48,10 @@ class Task{
         return id;
     }
 
-    public TaskState getState(){
+    public synchronized TaskState getState(){
         return state;
     }
-    public void setState(TaskState state){
+    public synchronized void setState(TaskState state){
         this.state = state;
     }
 }

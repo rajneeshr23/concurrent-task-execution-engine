@@ -2,10 +2,12 @@ class Worker implements Runnable {
 
     private final BlockingTaskQueue queue;
     private final String name;  
+    private final TaskCompletionListener listener;
 
-    public Worker(BlockingTaskQueue queue, String name){
+    public Worker(BlockingTaskQueue queue, String name, TaskCompletionListener listener){
         this.queue = queue;
         this.name = name;
+        this.listener = listener;
     }
 
     @Override
@@ -21,9 +23,13 @@ class Worker implements Runnable {
                     task.doWork();
                     task.setState(TaskState.SUCCESS);
 
+                    listener.taskCompleted(task);
+
                     System.out.println(name+" completed "+task.getId());
                 }catch(RuntimeException e){
                     task.setState(TaskState.FAILED);
+
+                    listener.taskFailed(task);
 
                     System.out.println(name+" failed "+task.getId());
                 }

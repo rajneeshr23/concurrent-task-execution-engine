@@ -37,4 +37,17 @@ class TaskGraph{
 
         return readyTasks;
     }
+
+    public boolean allTasksCompleted(){
+        for(Task task : tasks.values()){
+            TaskState state = task.getState();
+            if(state == TaskState.PENDING || 
+                state == TaskState.READY || 
+                state == TaskState.RUNNING) {
+                    
+                return false;
+            }
+        }
+        return true;
+    }
 }
