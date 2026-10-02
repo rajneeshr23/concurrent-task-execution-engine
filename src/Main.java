@@ -18,11 +18,13 @@ public class Main {
         Task B = new Task("B", () -> {
             System.out.println("Executing B on " + Thread.currentThread().getName());
 
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            // try {
+            //     Thread.sleep(2000);
+            // } catch (InterruptedException e) {
+            //     Thread.currentThread().interrupt();
+            // }
+
+            throw new RuntimeException("B failed!");
         });
 
         Task C = new Task("C", () -> {
@@ -45,9 +47,20 @@ public class Main {
             }
         });
 
+        Task E = new Task("E", () -> {
+            System.out.println("Executing E on " + Thread.currentThread().getName());
+
+            try {
+                Thread.sleep(8000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
 
         B.addDependency(A);
         C.addDependency(A);
+        // E.addDependency(C);
 
         D.addDependency(B);
         D.addDependency(C);
@@ -56,6 +69,7 @@ public class Main {
         graph.addTask(B);
         graph.addTask(C);
         graph.addTask(D);
+        // graph.addTask(E);
 
         scheduler.run();
     }

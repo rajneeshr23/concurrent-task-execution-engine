@@ -5,6 +5,8 @@ class Scheduler implements TaskCompletionListener{
     private TaskGraph graph;
     private final BlockingTaskQueue queue;
     private final List<Thread> workers; 
+    private boolean failureDetected = false;
+    private volatile boolean shutdown = false;
     
     private final Object lock = new Object();
 
@@ -14,7 +16,7 @@ class Scheduler implements TaskCompletionListener{
         this.workers = new ArrayList<>();
 
         for(int i = 1; i <= workerCount; i++){
-            Thread worker = new Thread(new Worker(queue, "Worker-"+i, this), "Worker-"+i);
+            Thread worker = new Thread(new Worker(queue, "Worker-"+i, this, this), "Worker-"+i);
             workers.add(worker);
         }
     }
@@ -25,7 +27,7 @@ class Scheduler implements TaskCompletionListener{
         synchronized (lock){
             for(Task child : task.getChildren()){
                 if(child.dependencyCompleted()){
-                    child.setState(TaskState.READY);
+                    // child.setState(TaskState.READY);
                     try{
                         queue.put(child);
                     }
@@ -35,24 +37,31 @@ class Scheduler implements TaskCompletionListener{
                     }
                 }
             }
-
-            // List<Task> readyTasks = graph.getReadyTasks();
-
-            // for(Task readyTask : readyTasks){
-            //     try{
-            //         queue.put(readyTask);
-            //     } catch (InterruptedException e) {
-            //         Thread.currentThread().interrupt();
-            //         return;
-            //     }
-            // }
         }
     }
 
     @Override 
     public void taskFailed(Task task){
         synchronized (lock) {
+            if(failureDetected){
+                return;
+            }
+
+            failureDetected = true;
+            graph.cancelPendingTasks();
+            List<Task> queuedTasks = queue.drain();
+
+            for(Task queuedTask : queuedTasks){
+                queuedTask.setState(TaskState.CANCELLED);
+
+                System.out.println("Cancelled "+queuedTask.getId());
+            }
+
             System.out.println("Scheduler detected failure of "+task.getId());
+
+            for(Thread worker : workers){
+                worker.interrupt();
+            }
         }
     }
 
@@ -80,7 +89,7 @@ class Scheduler implements TaskCompletionListener{
     private void waitForCompletion(){
         while(true){
             synchronized (lock) {
-                if(graph.allTasksCompleted()){
+                if(graph.allTasksCompleted() || failureDetected){
                     return;
                 }
             }
@@ -97,6 +106,8 @@ class Scheduler implements TaskCompletionListener{
     private void shutDownWorkers(){
         System.out.println("Shutting down workers...");
 
+        shutdown = true;
+
         for(Thread worker : workers) {
             worker.interrupt();
         }
@@ -112,19 +123,7 @@ class Scheduler implements TaskCompletionListener{
         System.out.println("Scheduler stopped");
     }
 
-    /*// public void executeTask(Task task){
-    //     task.setState(TaskState.RUNNING);
-
-    //     try{
-    //         task.doWork();
-    //         task.setState(TaskState.SUCCESS);
-
-    //         for(Task child : task.getChildren()){
-    //             child.dependencyCompleted();
-    //         }
-    //     } catch(RuntimeException e) {
-    //         task.setState(TaskState.FAILED);
-    //         System.out.println("Task "+task.getId()+" failed.");
-    //     }
-    // }*/
+    public boolean isShutdown() {
+        return shutdown;
+    }
 }

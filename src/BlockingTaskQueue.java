@@ -1,6 +1,9 @@
 // import java.util.LinkedList;
 // import java.util.Queue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BlockingTaskQueue {
     private Task[] queue;
 
@@ -31,11 +34,26 @@ public class BlockingTaskQueue {
         }
 
         Task task = queue[head];
+        queue[head] = null;
         size--;
 
         head = (head + 1) % queue.length;
 
         notifyAll();
         return task;
+    }
+
+    public synchronized List<Task> drain(){
+        List<Task> remainingTask = new ArrayList<>();
+
+        while(size-- > 0){
+            Task task = queue[head];
+            queue[head] = null;
+            head = (head + 1) % queue.length;
+
+            remainingTask.add(task);
+        }
+        notifyAll();
+        return remainingTask;
     }
 }

@@ -41,7 +41,7 @@ class TaskGraph{
     public boolean allTasksCompleted(){
         for(Task task : tasks.values()){
             TaskState state = task.getState();
-            if(state == TaskState.PENDING || 
+            if(state == TaskState.PENDING ||
                 state == TaskState.READY || 
                 state == TaskState.RUNNING) {
                     
@@ -49,5 +49,16 @@ class TaskGraph{
             }
         }
         return true;
+    }
+
+    public void cancelPendingTasks(){
+        for(Task task : tasks.values()){
+            if(task.getState() == TaskState.PENDING || 
+                task.getState() == TaskState.READY){
+                task.setState(TaskState.CANCELLED);
+
+                System.out.println("Cancelled "+task.getId());
+            }
+        }
     }
 }

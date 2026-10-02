@@ -31,13 +31,14 @@ class Task{
         return dependencyCount;
     }
 
-    // public synchronized void dependencyCompleted(){
-    //     dependencyCount--;
-    // }
     public synchronized boolean dependencyCompleted(){
         dependencyCount--;
 
-        return dependencyCount == 0 && state == TaskState.PENDING;
+        if(dependencyCount == 0 && state == TaskState.PENDING){
+            state = TaskState.READY;
+            return true;
+        }
+        return false;
     }
 
     public void doWork(){
