@@ -67,6 +67,11 @@ class Scheduler implements TaskCompletionListener{
 
     public void run(){
 
+        if(graph.hasCycle()){
+            System.out.println("Cannot start scheduler: graph contains a cycle.");
+            return;
+        }
+
         for(Thread worker : workers){
             worker.start();
         }

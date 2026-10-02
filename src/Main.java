@@ -64,6 +64,7 @@ public class Main {
 
         D.addDependency(B);
         D.addDependency(C);
+        // A.addDependency(D);
 
         graph.addTask(A);
         graph.addTask(B);

@@ -61,4 +61,46 @@ class TaskGraph{
             }
         }
     }
+
+    public boolean hasCycle(){
+        Map<Task, Integer> indegree = new HashMap<>();
+
+        for(Task task : tasks.values()){
+            indegree.put(task, 0);
+        }
+
+        for(Task task : tasks.values()){
+            for(Task child : task.getChildren()){
+                // indegree.put(child, indegree.getOrDefault(child, 0) + 1);
+                indegree.put(child, indegree.get(child) + 1);
+            }
+        }
+
+        List<Task> queue = new ArrayList<>();
+
+        int processed = 0, index = 0;
+
+        for(Task task : tasks.values()){
+            // if(indegree.getOrDefault(task, 0) == 0) {
+            if(indegree.get(task) == 0) {
+                queue.add(task);
+            }
+        }
+
+        while(index < queue.size()){
+            Task task = queue.get(index++);
+            processed++;
+
+            for(Task child : task.getChildren()){
+                int newDegree = indegree.get(child) - 1;
+                indegree.put(child, newDegree);
+
+                if(newDegree == 0) {
+                    queue.add(child);
+                }
+            }
+        }
+
+        return processed != tasks.size();
+    }
 }
