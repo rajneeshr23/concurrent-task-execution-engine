@@ -6,6 +6,7 @@ class Task{
     private Runnable work;
 
     private List<Task> children;
+    private List<Task> dependencies;
     private int dependencyCount;
 
     private TaskState state;
@@ -15,13 +16,19 @@ class Task{
         this.work = work;
 
         this.children = new ArrayList<>();
+        this.dependencies = new ArrayList<>();
         this.dependencyCount = 0;
 
         this.state = TaskState.PENDING;
     }
 
     public void addDependency(Task task){
+        if(dependencies.contains(task)){
+            return;
+        }
+        
         task.children.add(this);
+        this.dependencies.add(task);
         this.dependencyCount++;
     }
     public List<Task> getChildren(){
@@ -30,9 +37,23 @@ class Task{
     public synchronized int getDependencyCount(){
         return dependencyCount;
     }
+    public List<Task> getDependencies(){
+        return dependencies;
+    }
+
+    public boolean dependenciesCompleted(){
+        for(Task task : dependencies){
+            if(task.getState() != TaskState.SUCCESS){
+                return false;
+            }
+        }
+        return true;
+    }
 
     public synchronized boolean dependencyCompleted(){
-        dependencyCount--;
+        if(dependencyCount > 0){
+            dependencyCount--;
+        }
 
         if(dependencyCount == 0 && state == TaskState.PENDING){
             state = TaskState.READY;

@@ -12,7 +12,7 @@ class Scheduler implements TaskCompletionListener{
 
     public Scheduler(TaskGraph graph, int workerCount){
         this.graph = graph;
-        this.queue = new BlockingTaskQueue(100);
+        this.queue = new BlockingTaskQueue(graph.getAllTasks().size())  ; 
         this.workers = new ArrayList<>();
 
         for(int i = 1; i <= workerCount; i++){
@@ -23,19 +23,25 @@ class Scheduler implements TaskCompletionListener{
 
     @Override 
     public void taskCompleted(Task task){
+        List<Task> readyTasks = new ArrayList<>();
 
-        synchronized (lock){
+        synchronized(lock) {
+            if(failureDetected){
+                return;
+            }
             for(Task child : task.getChildren()){
                 if(child.dependencyCompleted()){
-                    // child.setState(TaskState.READY);
-                    try{
-                        queue.put(child);
-                    }
-                    catch (InterruptedException e){
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
+                    readyTasks.add(child);
                 }
+            }
+        }
+
+        for(Task child : readyTasks){
+            try{
+                queue.put(child);
+            } catch (InterruptedException e){
+                Thread.currentThread().interrupt();
+                return;
             }
         }
     }
@@ -67,16 +73,19 @@ class Scheduler implements TaskCompletionListener{
 
     public void run(){
 
+        System.out.println("Checking graph for cycles...");
         if(graph.hasCycle()){
-            System.out.println("Cannot start scheduler: graph contains a cycle.");
             return;
         }
 
+        System.out.println("Cycle check completed.");   
         for(Thread worker : workers){
             worker.start();
         }
 
+        System.out.println("Workers started.");
         List<Task> readyTasks = graph.getReadyTasks();
+
 
         for(Task readyTask : readyTasks){
             try{
@@ -88,7 +97,9 @@ class Scheduler implements TaskCompletionListener{
         }
 
         waitForCompletion();
-        shutDownWorkers();
+        graph.printIncompleteTasks();
+        shutdownWorkers();
+        System.out.println("Successful tasks: " + graph.countSuccessfulTasks() + "/" + graph.getAllTasks().size());
     }
 
     private void waitForCompletion(){
@@ -100,7 +111,7 @@ class Scheduler implements TaskCompletionListener{
             }
 
             try{
-                Thread.sleep(50);
+                Thread.sleep(500);
             } catch (InterruptedException e){
                 Thread.currentThread().interrupt();
                 return;
@@ -108,9 +119,8 @@ class Scheduler implements TaskCompletionListener{
         }
     }
 
-    private void shutDownWorkers(){
+    private void shutdownWorkers(){
         System.out.println("Shutting down workers...");
-
         shutdown = true;
 
         for(Thread worker : workers) {

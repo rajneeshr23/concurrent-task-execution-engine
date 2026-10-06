@@ -20,8 +20,6 @@ class Worker implements Runnable {
                 task = queue.take();
             } catch(InterruptedException e){
                 Thread.currentThread().interrupt();
-
-                System.out.println(name+" shutting down");
                 break;
             }
 
@@ -30,31 +28,22 @@ class Worker implements Runnable {
             }            
 
             task.setState(TaskState.RUNNING);
-
-            System.out.println(name+" picked up "+task.getId());
             
             try{
                 task.doWork();
                 if(Thread.currentThread().isInterrupted()){
                     task.setState(TaskState.CANCELLED);
-                    System.out.println(name+" cancelled "+task.getId());
                     continue;
                 }
                 task.setState(TaskState.SUCCESS);
-
-                System.out.println(name+" completed "+task.getId());
                 
                 listener.taskCompleted(task);
             }catch(RuntimeException e){
                 task.setState(TaskState.FAILED);
-
-                System.out.println(name+" failed "+task.getId());
                 
                 listener.taskFailed(task);
             }
         }
-
-        System.out.println(name+" shutting down");
     }
     
 }

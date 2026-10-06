@@ -103,4 +103,34 @@ class TaskGraph{
 
         return processed != tasks.size();
     }
+
+    public int countSuccessfulTasks(){
+        int count = 0;
+
+        for(Task task : tasks.values()){
+            if(task.getState() == TaskState.SUCCESS){
+                count++;
+            }
+        }
+        
+        return count;
+    }
+
+    public void printIncompleteTasks() {
+        boolean firstIncompleteTask = true;
+
+        for (Task task : tasks.values()) {
+            if (task.getState() != TaskState.SUCCESS) {
+                if(firstIncompleteTask) {
+                    System.out.println("\n--- Incomplete Tasks ---");
+                    firstIncompleteTask = false;
+                }
+                System.out.println(task.getId()+" | state="+task.getState()+" | remainingDependencies=" + task.getDependencyCount() );
+
+                for (Task dependency : task.getDependencies()) {
+                    System.out.println( " depends on " + dependency.getId() + " -> " + dependency.getState() );
+                }
+            }
+        }
+    }
 }

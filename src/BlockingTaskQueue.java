@@ -1,6 +1,3 @@
-// import java.util.LinkedList;
-// import java.util.Queue;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +17,7 @@ public class BlockingTaskQueue {
 
     public synchronized void put(Task task) throws InterruptedException {
         while(size == queue.length){
+            System.out.println("QUEUE FULL - waiting...");
             wait();
         }
         queue[tail] = task;
@@ -46,12 +44,13 @@ public class BlockingTaskQueue {
     public synchronized List<Task> drain(){
         List<Task> remainingTask = new ArrayList<>();
 
-        while(size-- > 0){
+        while(size > 0){
             Task task = queue[head];
             queue[head] = null;
             head = (head + 1) % queue.length;
 
             remainingTask.add(task);
+            size--;
         }
         notifyAll();
         return remainingTask;
